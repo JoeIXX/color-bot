@@ -1,4 +1,0 @@
-```text
-     discord.py
-     webcolors
-     ```
