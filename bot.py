@@ -5,7 +5,9 @@ from discord import app_commands
 from flask import Flask
 import webcolors
 
-# 1. 建立一個簡單的網頁伺服器（用來防休眠）
+# ----------------------------------------------------
+# 1. 建立輕量網頁伺服器（讓 UptimeRobot 敲擊以防止 Render 休眠）
+# ----------------------------------------------------
 app = Flask('')
 
 
@@ -18,7 +20,9 @@ def run_web():
   app.run(host='0.0.0.0', port=8080)
 
 
-# 2. 機器人原有的顏色對照表與邏輯
+# ----------------------------------------------------
+# 2. 顏色資料庫
+# ----------------------------------------------------
 COLOR_MAP = {
     "經典紅": ("red", "FF0000", 0xFF0000),
     "暗紅色": ("darkred", "8B0000", 0x8B0000),
@@ -43,17 +47,22 @@ COLOR_MAP = {
 }
 
 
+# ----------------------------------------------------
+# 3. Discord UI 選單介面
+# ----------------------------------------------------
 class ColorSelectView(discord.ui.View):
 
   def __init__(self):
     super().__init__()
 
   @discord.ui.select(
-      placeholder="請點選或選擇一個顏色...",
+      placeholder="請選擇一個顏色...",
       min_values=1,
       max_values=1,
       options=[
-          discord.SelectOption(label=name, description=f"查詢 {name} 的 16 進位碼")
+          discord.SelectOption(
+              label=name, description=f"查詢 {name} 的 16 進位與標籤"
+          )
           for name in COLOR_MAP.keys()
       ],
   )
@@ -64,48 +73,55 @@ class ColorSelectView(discord.ui.View):
     eng_name, hex_code, dec_color = COLOR_MAP[selected_name]
 
     embed = discord.Embed(
-        title=f"你選擇了：{selected_name}",
+        title=f"🎨 顏色查詢結果：{selected_name}",
         description=(
-            f"16 進位碼 (Hex)：`#{hex_code}`\n格式標籤："
-            f" `<color=#{hex_code}></color>`"
+            f"**Hex 碼：** `#{hex_code}`\n"
+            f"**格式標籤：** `<color=#{hex_code}></color>`"
         ),
         color=dec_color,
     )
     await interaction.response.edit_message(embed=embed, view=None)
 
 
+# ----------------------------------------------------
+# 4. 機器人主體設定（設為隱身/離線狀態）
+# ----------------------------------------------------
 class ColorBot(discord.Client):
 
   def __init__(self):
-    super().__init__(intents=discord.Intents.default())
+    # status=discord.Status.invisible 會讓機器人顯示為灰燈（離線）
+    super().__init__(
+        intents=discord.Intents.default(), status=discord.Status.invisible
+    )
     self.tree = app_commands.CommandTree(self)
 
   async def setup_hook(self):
     await self.tree.sync()
 
 
-client = discord.Client(
-    intents=discord.Intents.default(), status=discord.Status.offline
-)
+client = ColorBot()
 
 
-@client.tree.command(name="color", description="點擊選單來挑選顏色並查詢 16 進位碼")
+@client.tree.command(name="color", description="開啟色彩選單查詢 16 進位碼")
 async def color_menu(interaction: discord.Interaction):
   view = ColorSelectView()
   embed = discord.Embed(
       title="🎨 色彩查詢選單",
-      description="請從下方的下拉選單中選擇一個顏色：",
+      description="請點擊下方選單選擇你要查詢的顏色：",
       color=0x3498DB,
   )
   await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
 
 
-# 3. 同時啟動網頁伺服器與 Discord 機器人
+# ----------------------------------------------------
+# 5. 啟動入口
+# ----------------------------------------------------
 if __name__ == "__main__":
-  # 在背景執行網頁伺服器
+  # 在背景啟動 Flask 伺服器
   t = threading.Thread(target=run_web)
+  t.daemon = True
   t.start()
 
-  # 啟動機器人（從環境變數讀取 Token）
+  # 從環境變數讀取 Discord Token 啟動機器人
   TOKEN = os.getenv("DISCORD_TOKEN")
   client.run(TOKEN)
