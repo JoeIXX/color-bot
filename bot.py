@@ -84,7 +84,9 @@ class ColorBot(discord.Client):
     await self.tree.sync()
 
 
-client = ColorBot()
+client = discord.Client(
+    intents=discord.Intents.default(), status=discord.Status.offline
+)
 
 
 @client.tree.command(name="color", description="點擊選單來挑選顏色並查詢 16 進位碼")
