@@ -38,9 +38,10 @@ def self_ping():
 
 
 # ----------------------------------------------------
-# 3. 固定顏色資料庫
+# 3. 顏色資料庫設定
 # ----------------------------------------------------
-COLOR_MAP = {
+# 下拉選單專用的精簡版（保持原樣）
+DROPDOWN_COLOR_MAP = {
     "經典紅": ("red", "FF0000", 0xFF0000),
     "暗紅色": ("darkred", "8B0000", 0x8B0000),
     "鮮綠色": ("green", "008000", 0x008000),
@@ -63,6 +64,64 @@ COLOR_MAP = {
     "灰色": ("gray", "808080", 0x808080),
 }
 
+# 打字查詢專用的完整豐富版（包含維基百科各種中文色彩）
+SEARCH_COLOR_MAP = {
+    **DROPDOWN_COLOR_MAP,
+    "深灰色": ("darkgray", "404040", 0x404040),
+    "昏灰": ("dimgray", "696969", 0x696969),
+    "銀色": ("silver", "C0C0C0", 0xC0C0C0),
+    "淺灰色": ("lightgray", "D3D3D3", 0xD3D3D3),
+    "白煙色": ("whitesmoke", "F5F5F5", 0xF5F5F5),
+    "雪色": ("snow", "FFFAFA", 0xFFFAFA),
+    "沙棕": ("sandbeige", "E6C3C3", 0xE6C3C3),
+    "玫瑰褐": ("rosybrown", "BC8F8F", 0xBC8F8F),
+    "淺珊瑚紅": ("lightcoral", "F08080", 0xF08080),
+    "印度紅": ("indianred", "CD5C5C", 0xCD5C5C),
+    "磚紅色": ("firebrick", "B22222", 0xB22222),
+    "栗色": ("maroon", "800000", 0x800000),
+    "暗紅": ("darkred", "8B0000", 0x8B0000),
+    "鮮紅": ("strongred", "E60000", 0xE60000),
+    "柿子橙": ("persimmon", "FF4D40", 0xFF4D40),
+    "霧玫瑰色": ("mistyrose", "FFE4E1", 0xFFE4E1),
+    "鮭紅": ("salmon", "FA8072", 0xFA8072),
+    "腥紅": ("scarlet", "FF2400", 0xFF2400),
+    "蕃茄紅": ("tomato", "FF6347", 0xFF6347),
+    "暗鮭紅": ("darksalmon", "E9967A", 0xE9967A),
+    "珊瑚紅": ("coral", "FF7F50", 0xFF7F50),
+    "橙紅": ("orangered", "FF4500", 0xFF4500),
+    "淺鮭紅": ("lightsalmon", "FFA07A", 0xFFA07A),
+    "朱紅": ("vermilion", "FF4D00", 0xFF4D00),
+    "赭黃": ("sienna", "A0522D", 0xA0522D),
+    "熱帶橙": ("tropicalorange", "FF8033", 0xFF8033),
+    "駝色": ("camel", "A16B47", 0xA16B47),
+    "杏黃": ("apricot", "E69966", 0xE69966),
+    "海貝色": ("seashell", "FFF5EE", 0xFFF5EE),
+    "沙褐": ("sandbrown", "F4A460", 0xF4A460),
+    "銅色": ("bronze", "CD7F32", 0xCD7F32),
+    "亞麻色": ("linen", "FAF0E6", 0xFAF0E6),
+    "秘魯色": ("peru", "CD853F", 0xCD853F),
+    "卡其色": ("khaki", "996B1F", 0x996B1F),
+    "小麥色": ("wheat", "F5DEB3", 0xF5DEB3),
+    "桃色": ("peach", "FFE5B4", 0xFFE5B4),
+    "金菊色": ("goldenrod", "DAA520", 0xDAA520),
+    "琥珀色": ("amber", "FFBF00", 0xFFBF00),
+    "橄欖色": ("olive", "808000", 0x808000),
+    "黃綠": ("yellowgreen", "9ACD32", 0x9ACD32),
+    "草坪綠": ("lawngreen", "7CFC00", 0x7CFC00),
+    "查特酒綠": ("chartreuse", "7FFF00", 0x7FFF00),
+    "森林綠": ("forestgreen", "228B22", 0x228B22),
+    "檸檬綠": ("limegreen", "32CD32", 0x32CD32),
+    "海綠": ("seagreen", "2E8B57", 0x2E8B57),
+    "祖母綠": ("emerald", "50C878", 0x50C878),
+    "薄荷綠": ("mint", "16982B", 0x16982B),
+    "青瓷綠": ("celadon", "ACE1AF", 0xACE1AF),
+    "寶藍色": ("royalblue", "4169E1", 0x4169E1),
+    "矢車菊藍": ("cornflowerblue", "6495ED", 0x6495ED),
+    "紫羅蘭": ("violet", "EE82EE", 0xEE82EE),
+    "洋紅": ("magenta", "FF00FF", 0xFF00FF),
+    "薰衣草紫": ("lavender", "E6E6FA", 0xE6E6FA),
+}
+
 
 # ----------------------------------------------------
 # 4. 下拉選單與按鈕介面 (View)
@@ -74,7 +133,7 @@ class ColorSelect(discord.ui.Select):
         discord.SelectOption(
             label=name, description=f"查詢 {name} 的 16 進位與標籤"
         )
-        for name in COLOR_MAP.keys()
+        for name in DROPDOWN_COLOR_MAP.keys()
     ]
     super().__init__(
         placeholder="📌 點擊這裡選擇常用顏色...",
@@ -85,7 +144,7 @@ class ColorSelect(discord.ui.Select):
 
   async def callback(self, interaction: discord.Interaction):
     selected_name = self.values[0]
-    _, hex_code, dec_color = COLOR_MAP[selected_name]
+    _, hex_code, dec_color = DROPDOWN_COLOR_MAP[selected_name]
     desc_text = (
         f"**Hex 碼：** `#{hex_code}`\n**格式標籤：**"
         f" `<color=#{hex_code}></color>`"
@@ -121,12 +180,12 @@ class ColorQueryView(discord.ui.View):
 
 
 # ----------------------------------------------------
-# 5. 彈出式自訂輸入視窗 (Modal) - 支援強效中文比對與色碼查詢
+# 5. 彈出式自訂輸入視窗 (Modal) - 支援完整中文庫與色碼搜尋
 # ----------------------------------------------------
 class CustomColorModal(discord.ui.Modal, title="自訂顏色查詢"):
   color_input = discord.ui.TextInput(
-      label="請輸入中文顏色名稱或 6 位數色碼",
-      placeholder="例如：粉紅、FF5733 或 #00FFFF",
+      label="請輸入中文、英文顏色或 6 位數色碼",
+      placeholder="例如：淺珊瑚紅、玫瑰褐、FF5733",
       required=True,
       max_length=20,
   )
@@ -137,16 +196,16 @@ class CustomColorModal(discord.ui.Modal, title="自訂顏色查詢"):
     found_name = None
     found_data = None
 
-    # 1. 強效中文模糊比對（支援打「粉紅」就能對應「粉紅色」）
-    for name, (eng, hex_val, dec) in COLOR_MAP.items():
+    # 1. 在完整的 SEARCH_COLOR_MAP 中進行中文模糊比對
+    for name, (eng, hex_val, dec) in SEARCH_COLOR_MAP.items():
       if query in name or name in query:
         found_name = name
         found_data = (eng, hex_val, dec)
         break
 
-    # 2. 如果中文沒對應到，比對英文或色碼
+    # 2. 如果中文沒對應到，比對英文名稱或色碼
     if not found_data:
-      for name, (eng, hex_val, dec) in COLOR_MAP.items():
+      for name, (eng, hex_val, dec) in SEARCH_COLOR_MAP.items():
         if (
             query_clean.lower() == eng.lower()
             or query_clean.lower() == hex_val.lower()
@@ -168,7 +227,7 @@ class CustomColorModal(discord.ui.Modal, title="自訂顏色查詢"):
       except Exception:
         pass
 
-    # 4. 嘗試用 webcolors 解析英文名稱
+    # 4. 嘗試用 webcolors 解析英文標準色名
     if not found_data:
       try:
         rgb = webcolors.name_to_rgb(query_clean.lower())
@@ -194,7 +253,7 @@ class CustomColorModal(discord.ui.Modal, title="自訂顏色查詢"):
       await interaction.response.send_message(embed=embed, ephemeral=True)
     else:
       await interaction.response.send_message(
-          f"❌ 找不到你輸入的顏色「{query}」，請確認名稱或輸入正確的 6 位數色碼！",
+          f"❌ 找不到你輸入的顏色「{query}」，請確認名稱或直接輸入 6 位數色碼！",
           ephemeral=True,
       )
 
@@ -230,7 +289,7 @@ async def color_menu(interaction: discord.Interaction):
       title="🎨 色彩查詢中心",
       description=(
           "請從下方**下拉選單**挑選常用顏色，\n"
-          "或點擊 **「自訂輸入」** 按鈕來查詢中文顏色或自訂色碼！"
+          "或點擊 **「自訂輸入」** 按鈕來查詢任意中文顏色或自訂色碼！"
       ),
       color=0x3498DB,
   )
