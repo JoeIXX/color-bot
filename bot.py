@@ -38,7 +38,7 @@ def self_ping():
 
 
 # ----------------------------------------------------
-# 3. 動態顏色資料庫（會隨新增顏色自動擴充）
+# 3. 固定顏色資料庫
 # ----------------------------------------------------
 COLOR_MAP = {
     "經典紅": ("red", "FF0000", 0xFF0000),
@@ -65,47 +65,26 @@ COLOR_MAP = {
 
 
 # ----------------------------------------------------
-# 4. 下拉選單與按鈕動態介面 (View)
+# 4. 下拉選單與按鈕介面 (View)
 # ----------------------------------------------------
-class ColorQueryView(discord.ui.View):
+class ColorSelect(discord.ui.Select):
 
   def __init__(self):
-    super().__init__(timeout=None)
-    self.update_select_options()
-
-  # 根據目前 COLOR_MAP 動態刷新選單內容
-  def update_select_options(self):
-    self.clear_items()
-
-    # Discord 下拉選單上限為 25 個選項
     options = [
         discord.SelectOption(
             label=name, description=f"查詢 {name} 的 16 進位與標籤"
         )
-        for name in list(COLOR_MAP.keys())[:25]
+        for name in COLOR_MAP.keys()
     ]
-
-    select = discord.ui.Select(
-        placeholder="📌 點擊這裡選擇顏色...",
+    super().__init__(
+        placeholder="📌 點擊這裡選擇常用顏色...",
         min_values=1,
         max_values=1,
         options=options,
     )
-    select.callback = self.select_callback
-    self.add_item(select)
 
-    # 重新加入自訂輸入按鈕
-    button = discord.ui.Button(
-        label="✏️ 自訂輸入其他顏色/色碼",
-        style=discord.ButtonStyle.secondary,
-        row=1,
-    )
-    button.callback = self.custom_button_callback
-    self.add_item(button)
-
-  async def select_callback(self, interaction: discord.Interaction):
-    select = interaction.data["values"][0]
-    selected_name = select
+  async def callback(self, interaction: discord.Interaction):
+    selected_name = self.values[0]
     eng_name, hex_code, dec_color = COLOR_MAP[selected_name]
 
     embed = discord.Embed(
@@ -116,24 +95,37 @@ class ColorQueryView(discord.ui.View):
         ),
         color=dec_color,
     )
-    await interaction.response.edit_message(embed=embed, view=self)
+    await interaction.response.edit_message(embed=embed, view=self.view)
 
-  async def custom_button_callback(self, interaction: discord.Interaction):
-    await interaction.response.send_modal(CustomColorModal(parent_view=self))
+
+class CustomButton(discord.ui.Button):
+
+  def __init__(self):
+    super().__init__(
+        label="✏️ 自訂輸入其他顏色/色碼",
+        style=discord.ButtonStyle.secondary,
+        row=1,
+    )
+
+  async def callback(self, interaction: discord.Interaction):
+    await interaction.response.send_modal(CustomColorModal())
+
+
+class ColorQueryView(discord.ui.View):
+
+  def __init__(self):
+    super().__init__(timeout=None)
+    self.add_item(ColorSelect())
+    self.add_item(CustomButton())
 
 
 # ----------------------------------------------------
 # 5. 彈出式自訂輸入視窗 (Modal)
 # ----------------------------------------------------
 class CustomColorModal(discord.ui.Modal, title="自訂顏色查詢"):
-
-  def __init__(self, parent_view: ColorQueryView):
-    super().__init__()
-    self.parent_view = parent_view
-
   color_input = discord.ui.TextInput(
       label="請輸入中文顏色名稱或 6 位數色碼",
-      placeholder="例如：馬卡龍綠、FF5733 或 #00FFFF",
+      placeholder="例如：粉紅色、FF5733 或 #00FFFF",
       required=True,
       max_length=20,
   )
@@ -142,117 +134,7 @@ class CustomColorModal(discord.ui.Modal, title="自訂顏色查詢"):
     query = self.color_input.value.strip().replace("#", "")
     found_name = None
     found_data = None
-    is_new = False
 
-    # 1. 比對現有選單資料庫
+    # 1. 先比對固定資料庫
     for name, (eng, hex_val, dec) in COLOR_MAP.items():
-      if query in name or query.lower() == eng.lower() or query.lower() == hex_val.lower():
-        found_name = name
-        found_data = (eng, hex_val, dec)
-        break
-
-    # 2. 若不在資料庫，檢查是否為自訂 6 位數色碼
-    if not found_data:
-      try:
-        if len(query) == 6 and all(c in "0123456789abcdefABCDEF" for c in query):
-          hex_val = query.upper()
-          dec_color = int(hex_val, 16)
-          found_name = f"自訂色 #{hex_val}"
-          found_data = ("custom", hex_val, dec_color)
-          is_new = True
-      except Exception:
-        pass
-
-    # 3. 嘗試用 webcolors 解析英文名稱
-    if not found_data:
-      try:
-        rgb = webcolors.name_to_rgb(query.lower())
-        hex_val = f"{rgb.red:02X}{rgb.green:02X}{rgb.blue:02X}"
-        dec_color = (rgb.red << 16) + (rgb.green << 8) + rgb.blue
-        found_name = query
-        found_data = (query.lower(), hex_val, dec_color)
-        is_new = True
-      except Exception:
-        pass
-
-    # 4. 如果是新找到的顏色，自動把顏色加入 COLOR_MAP
-    if found_data:
-      if is_new or found_name not in COLOR_MAP:
-        COLOR_MAP[found_name] = found_data
-        # 自動刷新選單視窗，把新顏色加入選單中
-        self.parent_view.update_select_options()
-
-      _, hex_code, dec_color = found_data
-      embed = discord.Embed(
-          title=f"🎨 顏色查詢結果：{found_name}",
-          description=(
-              f"**Hex 碼：** `#{hex_code}`\n"
-              f"**格式標籤：** `<color=#{hex_code}></color>`"
-              f"{' *(已自動新增至下拉選單中！)*' if is_new else ''}"
-          ),
-          color=dec_color,
-      )
-      # 更新原訊息面板，顯示結果並同步最新的選單
-      await interaction.response.edit_message(embed=embed, view=self.parent_view)
-    else:
-      await interaction.response.send_message(
-          f"❌ 找不到你輸入的顏色「{query}」，請確認名稱或輸入正確的 6 位數色碼！",
-          ephemeral=True,
-      )
-
-
-# ----------------------------------------------------
-# 6. 機器人主體設定（隱身模式）
-# ----------------------------------------------------
-class ColorBot(discord.Client):
-
-  def __init__(self):
-    super().__init__(
-        intents=discord.Intents.default(), status=discord.Status.invisible
-    )
-    self.tree = app_commands.CommandTree(self)
-
-  async def setup_hook(self):
-    await self.tree.sync()
-
-  async def on_ready(self):
-    await self.change_presence(status=discord.Status.invisible)
-    print(f"Logged in as {self.user} (Invisible mode active)")
-
-
-client = ColorBot()
-
-
-@client.tree.command(
-    name="color", description="開啟色彩查詢選單，或點擊按鈕自行輸入顏色"
-)
-async def color_menu(interaction: discord.Interaction):
-  view = ColorQueryView()
-  embed = discord.Embed(
-      title="🎨 色彩查詢中心",
-      description=(
-          "請從下方**下拉選單**挑選常用顏色，\n"
-          "或點擊 **「自訂輸入」** 輸入新顏色（查到的新顏色會**自動加入選單**中喔！）。"
-      ),
-      color=0x3498DB,
-  )
-  await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
-
-
-# ----------------------------------------------------
-# 7. 啟動入口
-# ----------------------------------------------------
-if __name__ == "__main__":
-  # 1. 啟動網頁伺服器
-  t_web = threading.Thread(target=run_web)
-  t_web.daemon = True
-  t_web.start()
-
-  # 2. 啟動自我喚醒
-  t_ping = threading.Thread(target=self_ping)
-  t_ping.daemon = True
-  t_ping.start()
-
-  # 3. 啟動機器人
-  TOKEN = os.getenv("DISCORD_TOKEN")
-  client.run(TOKEN)
+      if query in name or query.lower() == eng.lower() or query.lower
