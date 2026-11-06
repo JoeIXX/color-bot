@@ -85,7 +85,7 @@ class ColorSelect(discord.ui.Select):
 
   async def callback(self, interaction: discord.Interaction):
     selected_name = self.values[0]
-    eng_name, hex_code, dec_color = COLOR_MAP[selected_name]
+    _, hex_code, dec_color = COLOR_MAP[selected_name]
     desc_text = (
         f"**Hex 碼：** `#{hex_code}`\n**格式標籤：**"
         f" `<color=#{hex_code}></color>`"
@@ -121,12 +121,12 @@ class ColorQueryView(discord.ui.View):
 
 
 # ----------------------------------------------------
-# 5. 彈出式自訂輸入視窗 (Modal) - 支援中文與色碼查詢
+# 5. 彈出式自訂輸入視窗 (Modal) - 支援強效中文比對與色碼查詢
 # ----------------------------------------------------
 class CustomColorModal(discord.ui.Modal, title="自訂顏色查詢"):
   color_input = discord.ui.TextInput(
       label="請輸入中文顏色名稱或 6 位數色碼",
-      placeholder="例如：粉紅色、FF5733 或 #00FFFF",
+      placeholder="例如：粉紅、FF5733 或 #00FFFF",
       required=True,
       max_length=20,
   )
@@ -137,9 +137,9 @@ class CustomColorModal(discord.ui.Modal, title="自訂顏色查詢"):
     found_name = None
     found_data = None
 
-    # 1. 優先比對中文名稱
+    # 1. 強效中文模糊比對（支援打「粉紅」就能對應「粉紅色」）
     for name, (eng, hex_val, dec) in COLOR_MAP.items():
-      if query == name or query in name:
+      if query in name or name in query:
         found_name = name
         found_data = (eng, hex_val, dec)
         break
