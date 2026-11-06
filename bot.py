@@ -1,12 +1,14 @@
 import os
 import threading
+import time
+import urllib.request
 import discord
 from discord import app_commands
 from flask import Flask
 import webcolors
 
 # ----------------------------------------------------
-# 1. 建立輕量網頁伺服器（讓 UptimeRobot 敲擊以防止 Render 休眠）
+# 1. 建立輕量網頁伺服器
 # ----------------------------------------------------
 app = Flask('')
 
@@ -21,7 +23,22 @@ def run_web():
 
 
 # ----------------------------------------------------
-# 2. 顏色資料庫
+# 2. 自我喚醒機制（已直接填入你的 Render 網址，防止休眠）
+# ----------------------------------------------------
+def self_ping():
+  RENDER_URL = "https://dc-color-bot-id5t.onrender.com"
+
+  while True:
+    try:
+      time.sleep(240)  # 每 4 分鐘 (240秒) 執行一次
+      with urllib.request.urlopen(RENDER_URL) as response:
+        print(f"Self-ping successful: {response.status}")
+    except Exception as e:
+      print(f"Self-ping failed: {e}")
+
+
+# ----------------------------------------------------
+# 3. 顏色資料庫
 # ----------------------------------------------------
 COLOR_MAP = {
     "經典紅": ("red", "FF0000", 0xFF0000),
@@ -48,7 +65,7 @@ COLOR_MAP = {
 
 
 # ----------------------------------------------------
-# 3. Discord UI 選單介面
+# 4. Discord UI 選單介面
 # ----------------------------------------------------
 class ColorSelectView(discord.ui.View):
 
@@ -84,12 +101,11 @@ class ColorSelectView(discord.ui.View):
 
 
 # ----------------------------------------------------
-# 4. 機器人主體設定（設為隱身/離線狀態）
+# 5. 機器人主體設定（設為隱身/離線狀態）
 # ----------------------------------------------------
 class ColorBot(discord.Client):
 
   def __init__(self):
-    # status=discord.Status.invisible 會讓機器人顯示為灰燈（離線）
     super().__init__(
         intents=discord.Intents.default(), status=discord.Status.invisible
     )
@@ -97,6 +113,10 @@ class ColorBot(discord.Client):
 
   async def setup_hook(self):
     await self.tree.sync()
+
+  async def on_ready(self):
+    await self.change_presence(status=discord.Status.invisible)
+    print(f"Logged in as {self.user} (Invisible mode active)")
 
 
 client = ColorBot()
@@ -114,14 +134,19 @@ async def color_menu(interaction: discord.Interaction):
 
 
 # ----------------------------------------------------
-# 5. 啟動入口
+# 6. 啟動入口
 # ----------------------------------------------------
 if __name__ == "__main__":
-  # 在背景啟動 Flask 伺服器
-  t = threading.Thread(target=run_web)
-  t.daemon = True
-  t.start()
+  # 1. 在背景啟動 Flask 網頁伺服器
+  t_web = threading.Thread(target=run_web)
+  t_web.daemon = True
+  t_web.start()
 
-  # 從環境變數讀取 Discord Token 啟動機器人
+  # 2. 在背景啟動自我喚醒執行緒
+  t_ping = threading.Thread(target=self_ping)
+  t_ping.daemon = True
+  t_ping.start()
+
+  # 3. 啟動 Discord 機器人
   TOKEN = os.getenv("DISCORD_TOKEN")
   client.run(TOKEN)
