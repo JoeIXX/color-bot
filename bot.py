@@ -40,7 +40,7 @@ def self_ping():
 # ----------------------------------------------------
 # 3. 顏色資料庫設定
 # ----------------------------------------------------
-# 1) 下拉選單專用（保持原本清爽的 20 個常用色）
+# 1) 下拉選單專用（清爽的 20 個常用色）
 DROPDOWN_COLOR_MAP = {
     "經典紅": ("red", "FF0000", 0xFF0000),
     "暗紅色": ("darkred", "8B0000", 0x8B0000),
@@ -64,7 +64,7 @@ DROPDOWN_COLOR_MAP = {
     "灰色": ("gray", "808080", 0x808080),
 }
 
-# 2) 打字自訂搜尋專用（包含你傳送的大量完整中文色彩對照）
+# 2) 打字自訂搜尋專用（包含豐富的中文色彩對照）
 SEARCH_COLOR_MAP = {
     **DROPDOWN_COLOR_MAP,
     "深灰色": ("darkgray", "404040", 0x404040),
@@ -119,9 +119,9 @@ SEARCH_COLOR_MAP = {
     "硬木色": ("burlywood", "DEB887", 0xDEB887),
     "粉撲桃色": ("peachpuff", "FFDAB9", 0xFFDAB9),
     "那瓦霍白": ("navajowhite", "FFDEAD", 0xFFDEAD),
-    "鹿皮鞋色": ("moccasin", "FFE4B5", 0FFE4B5),
-    "陶坯黃": ("bisque", "FFE4C4", 0FFE4C4),
-    "杏仁白": ("blanchedalmond", "FFEBCD", 0FFEBCD),
+    "鹿皮鞋色": ("moccasin", "FFE4B5", 0xFFE4B5),
+    "陶坯黃": ("bisque", "FFE4C4", 0xFFE4C4),
+    "杏仁白": ("blanchedalmond", "FFEBCD", 0xFFEBCD),
     "蕃木瓜色": ("papayawhip", "FFEFD5", 0xFFEFD5),
     "玉米絲色": ("cornsilk", "FFF8DC", 0xFFF8DC),
     "萬壽菊黃": ("marigold", "FF9900", 0xFF9900),
@@ -129,7 +129,7 @@ SEARCH_COLOR_MAP = {
     "卡其色": ("khaki", "996B1F", 0x996B1F),
     "舊蕾絲色": ("oldlace", "FDF5E6", 0xFDF5E6),
     "小麥色": ("wheat", "F5DEB3", 0xF5DEB3),
-    "桃色": ("peach", "FFE5B4", 0FFE5B4),
+    "桃色": ("peach", "FFE5B4", 0xFFE5B4),
     "花卉白": ("floralwhite", "FFFAF0", 0xFFFAF0),
     "金菊色": ("goldenrod", "DAA520", 0xDAA520),
     "暗金菊色": ("darkgoldenrod", "B8860B", 0xB8860B),
@@ -366,7 +366,7 @@ class ColorQueryView(discord.ui.View):
 class CustomColorModal(discord.ui.Modal, title="自訂顏色查詢"):
   color_input = discord.ui.TextInput(
       label="請輸入中文、英文顏色或 6 位數色碼",
-      placeholder="例如：道奇藍、長春花色、FF5733",
+      placeholder="例如：鹿皮鞋色、FF5733",
       required=True,
       max_length=20,
   )
